@@ -21,11 +21,11 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("GetAllUsers")]
+
         public List<MstUsers> GetAllUsers()
         {
             List<MstUsers> lst = (List<MstUsers>)_userService.GetAllUsers();
             return lst;
         }
-
     }
 }
