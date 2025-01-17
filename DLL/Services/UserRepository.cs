@@ -25,11 +25,14 @@ namespace DLL.Services
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 string query = @"INSERT INTO Mst_Users (LABID, UserName, Password, GlobalUID, MobileNumber, Emailid, LastLoginDate, ActiveFlag, CreationUID, CreationDateTime, ModifyUID, ModifyDateTime)
-                                 VALUES (@LABID, @UserName, @Password, @GlobalUID, @MobileNumber, @Emailid, @LastLoginDate, @ActiveFlag, @CreationUID, @CreationDateTime, @ModifyUID, @ModifyDateTime)";
+                         VALUES (@LABID, @UserName, @Password, @GlobalUID, @MobileNumber, @Emailid, @LastLoginDate, @ActiveFlag, @CreationUID, @CreationDateTime, @ModifyUID, @ModifyDateTime)";
                 SqlCommand cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@LABID", user.LABID);
                 cmd.Parameters.AddWithValue("@UserName", user.UserName);
-                cmd.Parameters.AddWithValue("@Password", user.Password);
+
+                string hashedPassword = HashPassword(user.Password);
+                cmd.Parameters.AddWithValue("@Password", hashedPassword);
+
                 cmd.Parameters.AddWithValue("@GlobalUID", user.GlobalUID);
                 cmd.Parameters.AddWithValue("@MobileNumber", user.MobileNumber ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@Emailid", user.EmailId ?? (object)DBNull.Value);
@@ -43,8 +46,17 @@ namespace DLL.Services
                 conn.Open();
                 cmd.ExecuteNonQuery();
             }
-
         }
+
+        private string HashPassword(string password)
+        {
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                return BitConverter.ToString(bytes).Replace("-", "").ToLower();
+            }
+        }
+
 
         public void DeleteUser(int id)
         {
@@ -176,5 +188,50 @@ namespace DLL.Services
                 cmd.ExecuteNonQuery();
             }
         }
+
+
+        public MstUsers ValidateUser(string username, string password)
+        {
+            MstUsers user = null;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = "SELECT * FROM Mst_Users WHERE userName = @Username";
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Username", username);
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        string storedHash = reader.GetString(reader.GetOrdinal("Password"));
+                        if (VerifyPasswordHash(password, storedHash))
+                        {
+                            user = new MstUsers
+                            {
+                                UserName = reader.GetString(reader.GetOrdinal("Username")),
+                                Password = storedHash,  // Store the hash, not the plain password
+                                                        // Populate other properties as needed
+                            };
+                        }
+                    }
+                }
+            }
+
+            return user;
+        }
+
+        private bool VerifyPasswordHash(string password, string storedHash)
+        {
+            
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                string hash = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+                return hash == storedHash;
+            }
+        }
+
+
     }
 }

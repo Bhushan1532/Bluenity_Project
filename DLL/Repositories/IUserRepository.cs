@@ -14,5 +14,6 @@ namespace DLL.Repositories
         void AddUser(MstUsers user);
         void UpdateUser(MstUsers user);
         void DeleteUser(int id);
+        MstUsers ValidateUser(string UserName, string Password);
     }
 }
