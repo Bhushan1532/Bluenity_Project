@@ -14,5 +14,10 @@ namespace BAL.Interfaces
         void CreateUser(MstUsers user);
         void UpdateUser(MstUsers user);
         void RemoveUser(int id);
+        MstUsers ValidateUser(string Username, string Password);
+
+
+
+
     }
 }

@@ -27,5 +27,19 @@ namespace WebApplication1.Controllers
             List<MstUsers> lst = (List<MstUsers>)_userService.GetAllUsers();
             return lst;
         }
+
+        [HttpGet("Login")]
+        public ActionResult LoginUser(string Username, string Password)
+        {
+            MstUsers user = _userService.ValidateUser(Username, Password);
+            if (user != null)
+            {
+                return Ok(new { message = "Login successful", user });
+            }
+            else
+            {
+                return Unauthorized(new { message = "Invalid username or password" });
+            }
+        }
     }
 }

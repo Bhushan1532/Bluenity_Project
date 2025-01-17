@@ -41,5 +41,10 @@ namespace BAL.Service
         {
             _userRepository.UpdateUser(user);
         }
+
+        public MstUsers ValidateUser(string username ,string  password)
+        {
+            return _userRepository.ValidateUser(username , password);
+        }
     }
 }
